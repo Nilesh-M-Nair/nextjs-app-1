@@ -3,6 +3,8 @@ import Link from 'next/link';
 import parse from 'html-react-parser';
 import { Image } from "../typescript/action";
 
+//Adding a comment
+
 type AdditionalParam = {
   banner_title:string;
   banner_description: string;

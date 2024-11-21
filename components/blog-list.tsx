@@ -12,7 +12,7 @@ type AdditionalParam = {
   body: string;
   date: string;
 }
-
+// Added comment
 type Author = {
   title: string;
   $: AdditionalParam;

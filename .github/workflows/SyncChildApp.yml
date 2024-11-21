@@ -1,0 +1,81 @@
+name: Sync with Child Repos
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  sync-children:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Parent Repo
+        uses: actions/checkout@v2
+
+      - name: Set up git user
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Update Child Repos
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}  # Use GH_PAT for authentication
+        run: |
+          # List of child repos
+          CHILD_REPOS=("nextjs-app-1" "nextjs-app-2")  # Replace with actual child repo names
+
+          for repo in "${CHILD_REPOS[@]}"
+          do
+            echo "Processing $repo..."
+
+            # Clone the child repo using GH_PAT for authentication
+            git clone https://$GH_PAT@github.com/Nilesh-M-Nair/${repo}.git
+            cd ${repo}
+
+            # Checkout development branch and create feature branch
+            git checkout development
+            git checkout -b feature/changes-from-boilerplate
+
+            # Add Parent Repo as a remote and fetch changes
+            git remote add parent https://github.com/Nilesh-M-Nair/nextjs-bolilerplate.git
+            git fetch parent main
+
+            # Merge changes from Parent Repo's main branch into the feature branch
+            if ! git merge --no-ff --strategy-option theirs parent/main; then
+              echo "Conflict encountered in $repo. Skipping this repo."
+              cd ..
+              continue
+            fi
+
+            # Push the new feature branch using GH_PAT for authentication
+            git push https://$GH_PAT@github.com/Nilesh-M-Nair/${repo}.git feature/changes-from-boilerplate
+
+            # Create and merge PR to development branch
+            if gh pr create --title "Sync with Parent Repo" --body "Automated sync from parent repo" --base development --head feature/changes-from-boilerplate; then
+              gh pr merge --auto --squash || echo "Failed to auto-merge PR to development in $repo."
+            else
+              echo "Failed to create PR to development branch in $repo. Skipping remaining steps for this repo."
+              cd ..
+              continue
+            fi
+
+            # Create and merge PR from development to staging branch
+            if gh pr create --title "Promote to Staging" --body "Automated PR to staging" --base staging --head development; then
+              gh pr merge --auto --squash || echo "Failed to auto-merge PR to staging in $repo."
+            else
+              echo "Failed to create PR to staging branch in $repo."
+              cd ..
+              continue
+            fi
+
+            # Create PR from staging to main (no merge)
+            if ! gh pr create --title "Promote to Main" --body "Ready for production review" --base main --head staging; then
+              echo "Failed to create PR to main branch in $repo."
+            fi
+
+            # Clean up feature branch after PR merges using GH_PAT for authentication
+            git push https://$GH_PAT@github.com/Nilesh-M-Nair/${repo}.git --delete feature/changes-from-boilerplate || echo "Failed to delete feature branch in $repo."
+
+            # Return to root directory for next repo
+            cd ..
+          done

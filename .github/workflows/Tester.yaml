@@ -1,0 +1,32 @@
+name: Test PAT Access
+
+on:
+  workflow_dispatch:  # Allows you to manually trigger the workflow from the GitHub Actions tab
+
+jobs:
+  test-pat-access:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v2
+
+      - name: Clone Child Repo with PAT
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
+        run: |
+          # Clone the child repo using the PAT for authentication
+          git clone https://$GH_PAT@github.com/Nilesh-M-Nair/nextjs-app-1.git
+          cd nextjs-app-1
+
+          # Set Git user identity
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Create a test file to confirm write access
+          echo "This is a test file created by the PAT." > test-file.txt
+          git add test-file.txt
+          git commit -m "Add test file to verify PAT access"
+
+          # Push changes using PAT
+          git push https://$GH_PAT@github.com/Nilesh-M-Nair/nextjs-app-1.git main

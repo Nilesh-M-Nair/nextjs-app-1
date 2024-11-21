@@ -12,6 +12,7 @@ export default function Header({ header, entries }: {header: HeaderProps, entrie
 
   const router = useRouter();
   const [getHeader, setHeader] = useState(header);
+  // addong comments
 
   function buildNavigation(ent: Entry, hd: HeaderProps) {
     let newHeader={...hd};
