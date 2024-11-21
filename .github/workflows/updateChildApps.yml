@@ -1,7 +1,7 @@
 name: 'Update Child Apps'
 on:
   push:
-    branches: feature/git_workflow_poc
+    branches: main
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -31,7 +31,7 @@ jobs:
               {
                 appName: 'anothernextjs-app-2',
                 repoName: 'anothernextjs-app-2',
-                repoLink: '@github.com/Nilesh-M-Nair/anothernextjs-app-2.git',
+                repoLink: '@github.com/Nilesh-M-Nair/nextjs-app-2.git',
                 devCiCdCommand: '/markteplace-app-automation -b development -a new-app -o Nilesh-M-Nair -ignore-npmrc',
                 stageCiCdCommand: '/markteplace-app-automation -b staging -a new-app -o Nilesh-M-Nair -ignore-npmrc'
               }
