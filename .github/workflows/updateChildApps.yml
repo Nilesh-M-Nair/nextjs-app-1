@@ -29,8 +29,8 @@ jobs:
                 stageCiCdCommand: '/markteplace-app-automation -b staging -a new-app -o Nilesh-M-Nair -ignore-npmrc'
               },
               {
-                appName: 'anothernextjs-app-2',
-                repoName: 'anothernextjs-app-2',
+                appName: 'nextjs-app-2',
+                repoName: 'nextjs-app-2',
                 repoLink: '@github.com/Nilesh-M-Nair/nextjs-app-2.git',
                 devCiCdCommand: '/markteplace-app-automation -b development -a new-app -o Nilesh-M-Nair -ignore-npmrc',
                 stageCiCdCommand: '/markteplace-app-automation -b staging -a new-app -o Nilesh-M-Nair -ignore-npmrc'
