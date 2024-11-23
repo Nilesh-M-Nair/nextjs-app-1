@@ -1,13 +1,12 @@
 name: 'Update Child Apps'
 on:
   push:
-    branches: main
+    branches:
+      - main
 
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 jobs:
-  # Testing
   configurations:
     runs-on: ubuntu-latest
     outputs:
@@ -21,31 +20,33 @@ jobs:
         with:
           script: |
             const appListMatrix = {
-              include: [{
-                appName: 'nextjs-app-1',
-                repoName: 'nextjs-app-1',
-                repoLink: '@github.com/Nilesh-M-Nair/nextjs-app-1.git',
-                devCiCdCommand: '/markteplace-app-automation -b development -a new-app -o Nilesh-M-Nair -ignore-npmrc',
-                stageCiCdCommand: '/markteplace-app-automation -b staging -a new-app -o Nilesh-M-Nair -ignore-npmrc'
-              },
-              {
-                appName: 'nextjs-app-2',
-                repoName: 'nextjs-app-2',
-                repoLink: '@github.com/Nilesh-M-Nair/nextjs-app-2.git',
-                devCiCdCommand: '/markteplace-app-automation -b development -a new-app -o Nilesh-M-Nair -ignore-npmrc',
-                stageCiCdCommand: '/markteplace-app-automation -b staging -a new-app -o Nilesh-M-Nair -ignore-npmrc'
-              }
+              include: [
+                {
+                  appName: 'nextjs-app-1',
+                  repoName: 'nextjs-app-1',
+                  repoLink: '@github.com/Nilesh-M-Nair/nextjs-app-1.git',
+                  devCiCdCommand: '/markteplace-app-automation -b development -a new-app -o Nilesh-M-Nair -ignore-npmrc',
+                  stageCiCdCommand: '/markteplace-app-automation -b staging -a new-app -o Nilesh-M-Nair -ignore-npmrc'
+                },
+                {
+                  appName: 'nextjs-app-2',
+                  repoName: 'nextjs-app-2',
+                  repoLink: '@github.com/Nilesh-M-Nair/nextjs-app-2.git',
+                  devCiCdCommand: '/markteplace-app-automation -b development -a new-app -o Nilesh-M-Nair -ignore-npmrc',
+                  stageCiCdCommand: '/markteplace-app-automation -b staging -a new-app -o Nilesh-M-Nair -ignore-npmrc'
+                }
               ]
             };
-            core.setOutput('ChildAppsList', appListMatrix);
-            core.setOutput('ChildAppsCiCdCommands', appListMatrix.include.reduce(function(allCommands, app){
-              return allCommands = allCommands + app.devCiCdCommand + "\n" + app.stageCiCdCommand + "\n";
+
+            core.setOutput('ChildAppsList', JSON.stringify(appListMatrix));
+            core.setOutput('ChildAppsCiCdCommands', appListMatrix.include.reduce((allCommands, app) => {
+              return allCommands + app.devCiCdCommand + "\n" + app.stageCiCdCommand + "\n";
             }, ""));
           result-encoding: string
-      - name: CICD Commands of All the Ecommerce Apps.
+      - name: Display CICD Commands
         run: |
-          echo "Once all the jobs are completed, execute all the below commands in the #marketplace-app-deployment-notifications channel in slack for deploying all the apps to dev and stage"
-          echo "${{steps.getConfigs.outputs.ChildAppsCiCdCommands}}"
+          echo "Once all jobs are completed, run these commands:"
+          echo "${{ steps.getConfigs.outputs.ChildAppsCiCdCommands }}"
 
   UpdatingChildApps:
     runs-on: ubuntu-latest
@@ -68,7 +69,7 @@ jobs:
       # Set Git author identity
       - name: Set Git author identity
         run: |
-          git config --global user.name "'github-actions[bot]"
+          git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
       # Fetch and Reset to Remote Branch
@@ -105,7 +106,7 @@ jobs:
         working-directory: ../${{ matrix.repoName }}
         run: |
           git add .
-          git commit -m "Updates taken from boilerplate" || echo "No changes to commit."
+          git commit -m "Updates from boilerplate" || echo "No changes to commit."
           git pull --rebase origin feature/updates-from-boilerplate || true
           git push origin feature/updates-from-boilerplate
 
