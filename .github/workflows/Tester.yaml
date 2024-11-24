@@ -1,32 +1,95 @@
-name: Test PAT Access
+name: Update Child Apps
 
 on:
-  workflow_dispatch:  # Allows you to manually trigger the workflow from the GitHub Actions tab
+  push:
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
-  test-pat-access:
+  configurations:
     runs-on: ubuntu-latest
-
+    outputs:
+      ChildAppsList: ${{ steps.getConfigs.outputs.ChildAppsList }}
     steps:
-      - name: Checkout Repo
-        uses: actions/checkout@v2
-
-      - name: Clone Child Repo with PAT
-        env:
-          GH_PAT: ${{ secrets.GH_PAT }}
+      - uses: actions/github-script@v6
+        id: getConfigs
+        with:
+          script: |
+            const appListMatrix = {
+              include: [
+                {
+                  appName: 'nextjs-app-1',
+                  repoName: 'nextjs-app-1',
+                  repoLink: 'https://github.com/Nilesh-M-Nair/nextjs-app-1.git'
+                },
+                {
+                  appName: 'nextjs-app-2',
+                  repoName: 'nextjs-app-2',
+                  repoLink: 'https://github.com/Nilesh-M-Nair/nextjs-app-2.git'
+                }
+              ]
+            };
+            core.setOutput('ChildAppsList', JSON.stringify(appListMatrix));
+  update-child-apps:
+    runs-on: ubuntu-latest
+    needs: configurations
+    strategy:
+      matrix: ${{ fromJson(needs.configurations.outputs.ChildAppsList) }}
+    steps:
+      - name: Clone Boilerplate Repo
         run: |
-          # Clone the child repo using the PAT for authentication
-          git clone https://$GH_PAT@github.com/Nilesh-M-Nair/nextjs-app-1.git
-          cd nextjs-app-1
+          git clone --branch main https://${{ secrets.GH_PAT }}@github.com/Nilesh-M-Nair/nextjs-bolilerplate.git ../boilerplate
 
-          # Set Git user identity
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+      - name: Clone Child Repo
+        run: |
+          git clone https://${{ secrets.GH_PAT }}@${{ matrix.repoLink }} ../${{ matrix.repoName }}
 
-          # Create a test file to confirm write access
-          echo "This is a test file created by the PAT." > test-file.txt
-          git add test-file.txt
-          git commit -m "Add test file to verify PAT access"
+      - name: Sync Changes
+        run: |
+          rsync -av --exclude='.git' ../boilerplate/ ../${{ matrix.repoName }}
 
-          # Push changes using PAT
-          git push https://$GH_PAT@github.com/Nilesh-M-Nair/nextjs-app-1.git main
+      - name: Commit and Push Changes
+        working-directory: ../${{ matrix.repoName }}
+        run: |
+          git add .
+          git commit -m "Sync changes from boilerplate" || echo "No changes to commit."
+          git push origin feature/updates-from-boilerplate
+
+      - name: Create or Update PR
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GH_PAT }}
+          script: |
+            const pr = await github.rest.pulls.create({
+              owner: 'Nilesh-M-Nair',
+              repo: '${{ matrix.repoName }}',
+              title: 'Automated PR for boilerplate updates',
+              head: 'feature/updates-from-boilerplate',
+              base: 'development',
+              body: 'This PR merges boilerplate updates into development.',
+            });
+            console.log(`Created PR: ${pr.data.html_url}`);
+
+      - name: Merge PR
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GH_PAT }}
+          script: |
+            const pr = await github.rest.pulls.list({
+              owner: 'Nilesh-M-Nair',
+              repo: '${{ matrix.repoName }}',
+              head: 'Nilesh-M-Nair:feature/updates-from-boilerplate',
+              base: 'development',
+            });
+            if (pr.data.length > 0) {
+              await github.rest.pulls.merge({
+                owner: 'Nilesh-M-Nair',
+                repo: '${{ matrix.repoName }}',
+                pull_number: pr.data[0].number,
+                merge_method: 'squash',
+              });
+              console.log('PR merged successfully.');
+            } else {
+              console.log('No PR to merge.');
+            }
