@@ -1,8 +1,8 @@
-name: 'Update Child Apps'
+name: 'Child Sync'
 on:
-  # push:
-  #   branches:
-  #     - main
+  push:
+    branches:
+      - main
 
   workflow_dispatch:
 
@@ -20,33 +20,23 @@ jobs:
         with:
           script: |
             const appListMatrix = {
-              include: [
-                {
-                  appName: 'nextjs-app-1',
-                  repoName: 'nextjs-app-1',
-                  repoLink: '@github.com/Nilesh-M-Nair/nextjs-app-1.git',
-                  devCiCdCommand: '/markteplace-app-automation -b development -a new-app -o Nilesh-M-Nair -ignore-npmrc',
-                  stageCiCdCommand: '/markteplace-app-automation -b staging -a new-app -o Nilesh-M-Nair -ignore-npmrc'
-                },
-                {
-                  appName: 'nextjs-app-2',
-                  repoName: 'nextjs-app-2',
-                  repoLink: '@github.com/Nilesh-M-Nair/nextjs-app-2.git',
-                  devCiCdCommand: '/markteplace-app-automation -b development -a new-app -o Nilesh-M-Nair -ignore-npmrc',
-                  stageCiCdCommand: '/markteplace-app-automation -b staging -a new-app -o Nilesh-M-Nair -ignore-npmrc'
-                }
-              ]
-            };
-
+                include: [
+                    {
+                        appName: 'nextjs-app-1',
+                        repoName: 'nextjs-app-1',
+                        repoLink: '@github.com/Nilesh-M-Nair/nextjs-app-1.git',
+                        devCiCdCommand: '/markteplace-app-automation -b development -a new-app -o Nilesh-M-Nair -ignore-npmrc',
+                        stageCiCdCommand: '/markteplace-app-automation -b staging -a new-app -o Nilesh-M-Nair -ignore-npmrc'
+                    },
+                    {
+                        repoName: 'nextjs-app-2',
+                        repoLink: '@github.com/Nilesh-M-Nair/nextjs-app-2.git',
+                        devCiCdCommand: '/markteplace-app-automation -b development -a new-app -o Nilesh-M-Nair -ignore-npmrc',
+                        stageCiCdCommand: '/markteplace-app-automation -b staging -a new-app -o Nilesh-M-Nair -ignore-npmrc'
+                    }
+                ]
+                };
             core.setOutput('ChildAppsList', JSON.stringify(appListMatrix));
-            core.setOutput('ChildAppsCiCdCommands', appListMatrix.include.reduce((allCommands, app) => {
-              return allCommands + app.devCiCdCommand + "\n" + app.stageCiCdCommand + "\n";
-            }, ""));
-          result-encoding: string
-      - name: Display CICD Commands
-        run: |
-          echo "Once all jobs are completed, run these commands:"
-          echo "${{ steps.getConfigs.outputs.ChildAppsCiCdCommands }}"
 
   UpdatingChildApps:
     runs-on: ubuntu-latest
@@ -131,6 +121,33 @@ jobs:
               core.setOutput('pr_exists', 'false');
             }
 
+      # # Create Pull Request from feature branch to development
+      # - name: Create Pull Request from feature to development
+      #   if: ${{ steps.check_existing_pr.outputs.pr_exists == 'false' }}
+      #   uses: actions/github-script@v6
+      #   with:
+      #     github-token: ${{ secrets.GH_PAT }}
+      #     script: |
+      #       try {
+      #           const { data: pr } = await github.rest.pulls.create({
+      #           owner: 'Nilesh-M-Nair',
+      #           repo: '${{ matrix.repoName }}',
+      #           title: 'Automated PR for changes from feature to development',
+      #           head: 'feature/updates-from-boilerplate',
+      #           base: 'development',
+      #           body: 'This PR is automatically created to merge changes from feature branch into development.',
+      #         });
+      #         core.setOutput('pr_number', pr.data.number);
+      #         console.log(Created PR #${pr});
+      #       } catch (error) {
+      #         console.log(error)
+      #         if (error.status === 422) {
+      #           console.log('Pull request already exists or no changes to create a PR.');
+      #         } else {
+      #           throw error;
+      #         }
+      #       }
+
       # Create Pull Request from feature branch to development
       - name: Create Pull Request from feature to development
         if: ${{ steps.check_existing_pr.outputs.pr_exists == 'false' }}
@@ -138,25 +155,15 @@ jobs:
         with:
           github-token: ${{ secrets.GH_PAT }}
           script: |
-            try {
-                const { data: pr } = await github.rest.pulls.create({
-                owner: 'Nilesh-M-Nair',
-                repo: '${{ matrix.repoName }}',
-                title: 'Automated PR for changes from feature to development',
-                head: 'feature/updates-from-boilerplate',
-                base: 'development',
-                body: 'This PR is automatically created to merge changes from feature branch into development.',
+              const pr = await github.rest.pulls.create({
+              owner: 'Nilesh-M-Nair',
+              repo: '${{ matrix.repoName }}',
+              title: 'Automated PR for boilerplate updates',
+              head: 'feature/updates-from-boilerplate',
+              base: 'development',
+              body: 'This PR merges boilerplate updates into development.',
               });
-              core.setOutput('pr_number', pr.data.number);
-              console.log(Created PR #${pr});
-            } catch (error) {
-              console.log(error)
-              if (error.status === 422) {
-                console.log('Pull request already exists or no changes to create a PR.');
-              } else {
-                throw error;
-              }
-            }
+              console.log(`Created PR: ${pr.data.html_url}`);
 
       # Merge the PR from feature to development
       - name: Merge the Pull Request from feature to development

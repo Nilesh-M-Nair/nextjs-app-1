@@ -1,9 +1,9 @@
 name: Test
 
 on:
-  push:
-    branches:
-      - main
+  # push:
+  #   branches:
+  #     - main
   workflow_dispatch:
 
 jobs:
@@ -22,11 +22,6 @@ jobs:
                   appName: 'nextjs-app-1',
                   repoName: 'nextjs-app-1',
                   repoLink: 'github.com/Nilesh-M-Nair/nextjs-app-1.git'
-                },
-                {
-                  appName: 'nextjs-app-2',
-                  repoName: 'nextjs-app-2',
-                  repoLink: 'github.com/Nilesh-M-Nair/nextjs-app-2.git'
                 }
               ]
             };
@@ -37,6 +32,12 @@ jobs:
     strategy:
       matrix: ${{ fromJson(needs.configurations.outputs.ChildAppsList) }}
     steps:
+      # Set Git author identity
+      - name: Set Git author identity
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
       - name: Clone Boilerplate Repo
         run: |
           git clone --branch main https://${{ secrets.GH_PAT }}@github.com/Nilesh-M-Nair/nextjs-bolilerplate.git ../boilerplate
@@ -49,12 +50,28 @@ jobs:
         run: |
           rsync -av --exclude='.git' ../boilerplate/ ../${{ matrix.repoName }}
 
-      - name: Commit and Push Changes
+      - name: Ensure Branch Exists and Commit Changes
         working-directory: ../${{ matrix.repoName }}
         run: |
+          # Stash both tracked and untracked changes
+          git stash push --include-untracked || true
+      
+          # Check if the branch exists remotely
+          if git ls-remote --exit-code origin feature/updates-from-boilerplate; then
+            git fetch origin feature/updates-from-boilerplate
+            git checkout feature/updates-from-boilerplate
+            git stash pop || true # Apply stashed changes back
+          else
+            git checkout -b feature/updates-from-boilerplate
+          fi
+      
+          # Add changes, commit, and push
           git add .
           git commit -m "Sync changes from boilerplate" || echo "No changes to commit."
-          git push origin feature/updates-from-boilerplate
+          git pull --rebase origin feature/updates-from-boilerplate || true
+          git push --set-upstream origin feature/updates-from-boilerplate
+        
+        
 
       - name: Create or Update PR
         uses: actions/github-script@v6
