@@ -20,22 +20,22 @@ jobs:
         with:
           script: |
             const appListMatrix = {
-                include: [
-                    {
-                        appName: 'nextjs-app-1',
-                        repoName: 'nextjs-app-1',
-                        repoLink: '@github.com/Nilesh-M-Nair/nextjs-app-1.git',
-                        devCiCdCommand: '/markteplace-app-automation -b development -a new-app -o Nilesh-M-Nair -ignore-npmrc',
-                        stageCiCdCommand: '/markteplace-app-automation -b staging -a new-app -o Nilesh-M-Nair -ignore-npmrc'
-                    },
-                    {
-                        repoName: 'nextjs-app-2',
-                        repoLink: '@github.com/Nilesh-M-Nair/nextjs-app-2.git',
-                        devCiCdCommand: '/markteplace-app-automation -b development -a new-app -o Nilesh-M-Nair -ignore-npmrc',
-                        stageCiCdCommand: '/markteplace-app-automation -b staging -a new-app -o Nilesh-M-Nair -ignore-npmrc'
-                    }
-                ]
-                };
+              include: [
+                {
+                      appName: 'nextjs-app-1',
+                      repoName: 'nextjs-app-1',
+                      repoLink: '@github.com/Nilesh-M-Nair/nextjs-app-1.git',
+                      devCiCdCommand: '/markteplace-app-automation -b development -a new-app -o Nilesh-M-Nair -ignore-npmrc',
+                      stageCiCdCommand: '/markteplace-app-automation -b staging -a new-app -o Nilesh-M-Nair -ignore-npmrc'
+                  },
+                  {
+                      repoName: 'nextjs-app-2',
+                      repoLink: '@github.com/Nilesh-M-Nair/nextjs-app-2.git',
+                      devCiCdCommand: '/markteplace-app-automation -b development -a new-app -o Nilesh-M-Nair -ignore-npmrc',
+                      stageCiCdCommand: '/markteplace-app-automation -b staging -a new-app -o Nilesh-M-Nair -ignore-npmrc'
+                  }
+              ]
+            };
             core.setOutput('ChildAppsList', JSON.stringify(appListMatrix));
 
   UpdatingChildApps:
